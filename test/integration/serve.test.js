@@ -219,7 +219,7 @@ describe('serve', () => {
     ws.close();
   });
 
-  it('SAVE_CONFIG rejects included read-only collection profiles', async () => {
+  it('SAVE_CONFIG rejects included read-only project configs', async () => {
     let { default: WebSocket } = await import('ws');
     let ws = new WebSocket(`ws://localhost:${WS_PORT}`);
 

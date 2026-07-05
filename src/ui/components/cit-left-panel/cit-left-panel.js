@@ -36,7 +36,7 @@ CitLeftPanel.template = html`
 <img 
   src="https://rnd-pro.com/svg/cit/index.svg"
   ${{onclick: 'selectProfilePopup'}}
-  title="Select Collection Profile"
+  title="Open Projects"
   width="32" height="32">
 
 <button round 

@@ -4,7 +4,7 @@ import { icon } from '../../icon.js';
 export const template = html`
 <div popup>
   <div p-header>
-    <div p-caption>${icon('settings')} &nbsp;Collections & Profiles</div>
+    <div p-caption>${icon('settings')} &nbsp;Projects</div>
     <button round ${{onclick: 'close'}}>${icon('close')}</button>
   </div>
   <div p-content>
@@ -20,7 +20,7 @@ export const template = html`
           <button ${{onclick: '^toggleUnfold'}} title="Edit">{{name}} ${icon('keyboard_arrow_down', true)}</button>
           <div>
             <button ${{onclick: '^applyChanges', '@disabled': 'saveDisabled'}} title="Save Changes">${icon('save')} Save Changes</button>
-            <button accent ${{onclick: '^onActivate'}} title="Activate Profile">${icon('check')} Set Profile</button>
+            <button accent ${{onclick: '^onActivate'}} title="View Project">${icon('check')} View</button>
           </div>
         </div>
         <div project-meta>

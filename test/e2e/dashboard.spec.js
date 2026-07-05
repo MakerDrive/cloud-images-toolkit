@@ -37,12 +37,13 @@ test.describe('Dashboard', () => {
     expect(errors).toEqual([]);
   });
 
-  test('collection profiles can be filtered by project metadata', async ({ page }) => {
+  test('projects can be filtered by project metadata', async ({ page }) => {
     await page.goto('/');
-    await page.locator('img[title="Select Collection Profile"]').click();
+    await page.locator('img[title="Open Projects"]').click();
 
     let popup = page.locator('cit-collection-profiles[active]');
     await expect(popup).toBeAttached();
+    await expect(popup.locator('[p-caption]')).toContainText('Projects');
     await expect(popup.locator('[project-filter] input')).toBeVisible();
     await expect(popup.getByText('Local Projects')).toBeVisible();
     await expect(popup.getByText('GitHub Pages')).toBeVisible();
@@ -55,6 +56,6 @@ test.describe('Dashboard', () => {
     await expect(visibleItems).toHaveCount(1);
     await expect(visibleItems.first()).toContainText('Included Test Collection');
     await expect(visibleItems.first().locator('button[title="Save Changes"]')).toBeDisabled();
-    await expect(visibleItems.first().locator('button[title="Activate Profile"]')).toBeEnabled();
+    await expect(visibleItems.first().locator('button[title="View Project"]')).toBeEnabled();
   });
 });

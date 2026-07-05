@@ -147,14 +147,14 @@ wss.on('connection', (ws) => {
       if (meta?.included) {
         ws.send(JSON.stringify({
           cmd: 'TEXT',
-          data: 'Included collection profiles are read-only from the global dashboard. Edit the source project config directly.',
+          data: 'Included project configs are read-only from the global dashboard. Edit the source project config directly.',
         }));
         return;
       }
       if (!msgData.config) {
         ws.send(JSON.stringify({
           cmd: 'TEXT',
-          data: 'No collection profile was provided.',
+          data: 'No project config was provided.',
         }));
         return;
       }

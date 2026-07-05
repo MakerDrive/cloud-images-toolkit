@@ -163,13 +163,13 @@ Object entries with `configPath` can include a project config and apply runtime-
 
 Paths inside an included config are resolved relative to that config file, then exposed to the running dashboard as paths relative to the directory where `cit` was started. Override paths are resolved relative to the config file that declares the override. Included configs can contain a single collection, an array of collections, or more includes. Circular includes are rejected.
 
-Included collection profiles are read-only from the global dashboard. Edit the source project's `cit-config.json` directly when changing collection settings.
+Included project configs are read-only from the global dashboard. Edit the source project's `cit-config.json` directly when changing collection settings.
 
 Project metadata fields are optional and are used only by the dashboard:
 
 - `projectKey` — stable logical project key for filtering.
 - `projectName` — human-readable project name.
-- `projectGroup` — group heading in the collection profile popup.
+- `projectGroup` — group heading in the projects popup.
 - `projectTags` — searchable labels.
 
 These fields do not affect path resolution, upload behavior, or generated CDN URLs. The existing `projectId` field is still the CDN/provider project identifier used by the `{PROJECT}` URL template macro.
