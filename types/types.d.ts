@@ -34,6 +34,7 @@ declare type CITConfig = {
   imsDataFolder?: string,
   imsDataMinify?: boolean,
   imgSrcFolder: string,
+  syncDataImgSrcFolder?: string,
   apiKey?: string,
   apiKeyPath?: string,
   projectId?: string,
@@ -57,6 +58,7 @@ declare type CITCollectionInfo = {
   index: number,
   name?: string,
   imgSrcFolder: string,
+  syncDataImgSrcFolder: string,
   projectKey?: string,
   projectName?: string,
   projectGroup?: string,
@@ -78,6 +80,7 @@ declare type CITConfigMeta = {
   sourceFile: string,
   sourceIndex: number,
   sourceIsArray: boolean,
+  syncDataImgSrcFolder: string,
   included: boolean,
 };
 

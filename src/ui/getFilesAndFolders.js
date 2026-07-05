@@ -1,10 +1,25 @@
 /**
- * 
- * @param {Object<string, CloudImageDescriptor>} data 
- * @param {string} srcFolder 
- * @param {string} filter 
+ * @param {string} key
+ * @param {string} srcFolder
+ * @returns {string}
+ */
+function getPathInCollection(key, srcFolder) {
+  if (!srcFolder) {
+    return key.replace(/^\.\//, '');
+  }
+  let normalizedSrcFolder = srcFolder.endsWith('/') ? srcFolder : `${srcFolder}/`;
+  if (key.startsWith(normalizedSrcFolder)) {
+    return key.slice(normalizedSrcFolder.length);
+  }
+  return key.replace(/^\.\//, '');
+}
+
+/**
+ * @param {Object<string, CloudImageDescriptor>} data
+ * @param {string} srcFolder
+ * @param {string} filter
  * @param {string} tagsFilter
- * @returns 
+ * @returns
  */
 export function getFilesAndFolders(data, srcFolder = '', filter = '', tagsFilter = '') {
   /** @type {Object<string, CloudImageDescriptor>} */
@@ -13,7 +28,7 @@ export function getFilesAndFolders(data, srcFolder = '', filter = '', tagsFilter
   let folders = {};
 
   for (let key in data) {
-    let fileKey = key.replace(srcFolder, '');
+    let fileKey = getPathInCollection(key, srcFolder);
     let tags = data[key].tags || [];
     let hasTag = !tagsFilter || tags.some(t => t.toLowerCase().includes(tagsFilter.toLowerCase().trim()));
     

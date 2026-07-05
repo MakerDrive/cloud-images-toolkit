@@ -3,6 +3,7 @@ import { configs, connectors } from './CFG.js';
 import { getAspectRatio } from '../iso/getAspectRatio.js';
 import { imageSize } from 'image-size';
 import { fillTpl } from '../iso/fillTpl.js';
+import { getConfigMeta } from './resolveConfigs.js';
 
 const DEFAULT_IMG_TYPES = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'];
 
@@ -164,6 +165,9 @@ export class FolderSync {
   static startAll(onUpdate) {
     for (let i = 0; i < configs.length; i++) {
       let cfg = configs[i];
+      if (getConfigMeta(cfg)?.included) {
+        continue;
+      }
       let connector = connectors[i];
       let state = { retries: 3 };
 

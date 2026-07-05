@@ -19,6 +19,25 @@ function normalizeProjectTags(tags) {
 }
 
 /**
+ * @param {number} index
+ * @returns {boolean}
+ */
+function isReadOnlyCollection(index) {
+  let cfg = configs[index];
+  return !!cfg && !!getConfigMeta(cfg)?.included;
+}
+
+/**
+ * @param {import('ws').WebSocket} ws
+ */
+function sendReadOnlyMessage(ws) {
+  ws.send(JSON.stringify({
+    cmd: 'TEXT',
+    data: 'Included project configs are read-only from the global dashboard. Edit the source project directly.',
+  }));
+}
+
+/**
  * @param {CITConfig} cfg
  * @param {number} index
  * @returns {CITCollectionInfo}
@@ -30,6 +49,7 @@ function getCollectionInfo(cfg, index) {
     index,
     name: cfg.name,
     imgSrcFolder: cfg.imgSrcFolder,
+    syncDataImgSrcFolder: meta?.syncDataImgSrcFolder || cfg.imgSrcFolder,
     projectKey: cfg.projectKey,
     projectName: cfg.projectName,
     projectGroup: cfg.projectGroup,
@@ -48,6 +68,7 @@ function toSavedConfig(cfg) {
   delete next.index;
   delete next.included;
   delete next.readOnly;
+  delete next.syncDataImgSrcFolder;
   return next;
 }
 
@@ -56,6 +77,7 @@ let browserConfigs = configs.map((cfg, i) => {
   let collectionInfo = getCollectionInfo(cfg, i);
   let safe = {
     ...cfg,
+    syncDataImgSrcFolder: collectionInfo.syncDataImgSrcFolder,
     included: collectionInfo.included,
     readOnly: collectionInfo.readOnly,
   };
@@ -74,6 +96,10 @@ wss.on('connection', (ws) => {
     FETCH: async (data) => {
       let selection = data?.selection || data;
       let idx = data?.collectionIndex ?? 0;
+      if (isReadOnlyCollection(idx)) {
+        sendReadOnlyMessage(ws);
+        return;
+      }
       if (!Array.isArray(selection)) {
         return;
       }
@@ -90,6 +116,10 @@ wss.on('connection', (ws) => {
     REMOVE: async (data) => {
       let selection = data?.selection || data;
       let idx = data?.collectionIndex ?? 0;
+      if (isReadOnlyCollection(idx)) {
+        sendReadOnlyMessage(ws);
+        return;
+      }
       if (!Array.isArray(selection)) {
         return;
       }
@@ -106,6 +136,10 @@ wss.on('connection', (ws) => {
     EDIT: async (data) => {
       let update = data?.update || data;
       let idx = data?.collectionIndex ?? 0;
+      if (isReadOnlyCollection(idx)) {
+        sendReadOnlyMessage(ws);
+        return;
+      }
       let cfg = configs[idx];
       let syncData = JSON.parse(fs.readFileSync(cfg.syncDataPath).toString());
       Object.keys(update).forEach((key) => {
@@ -119,6 +153,10 @@ wss.on('connection', (ws) => {
     },
     SAVE_IMS: async (/** @type {WsMsgData} */ msgData) => {
       let idx = msgData.collectionIndex ?? 0;
+      if (isReadOnlyCollection(idx)) {
+        sendReadOnlyMessage(ws);
+        return;
+      }
       ImsSync.save(msgData.hash, msgData.srcData, idx);
       ws.send(JSON.stringify({
         cmd: 'TEXT',
@@ -128,6 +166,10 @@ wss.on('connection', (ws) => {
     DELETE_IMS: async (data) => {
       let hash = typeof data === 'string' ? data : data?.hash;
       let idx = data?.collectionIndex ?? 0;
+      if (isReadOnlyCollection(idx)) {
+        sendReadOnlyMessage(ws);
+        return;
+      }
       ImsSync.delete(hash, idx);
       ws.send(JSON.stringify({
         cmd: 'TEXT',
@@ -135,6 +177,11 @@ wss.on('connection', (ws) => {
       }));
     },
     PUB_DATA_IMG: async (/** @type {WsMsgData} */ msgData) => {
+      let idx = msgData.collectionIndex ?? 0;
+      if (isReadOnlyCollection(idx)) {
+        sendReadOnlyMessage(ws);
+        return;
+      }
       await FolderSync.saveImage(msgData.localPath, msgData.imgData);
       ws.send(JSON.stringify({
         cmd: 'TEXT',
@@ -286,7 +333,11 @@ const httpServer = http.createServer((req, res) => {
 httpServer.listen(ports.http, () => {
   console.log(`✅ HTTP server started on port ${ports.http}`);
   for (let cfg of configs) {
-    console.log(`✅ [${cfg.name}] Watching: ${cfg.imgSrcFolder}`);
+    if (getConfigMeta(cfg)?.included) {
+      console.log(`✅ [${cfg.name}] Read-only include: ${cfg.imgSrcFolder}`);
+    } else {
+      console.log(`✅ [${cfg.name}] Watching: ${cfg.imgSrcFolder}`);
+    }
   }
   console.log(`✅ Cloud Images Toolkit dashboard is available at http://localhost:${ports.http}`);
 });

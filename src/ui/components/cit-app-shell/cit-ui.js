@@ -291,7 +291,8 @@ class CitUi extends Symbiote {
     const applyFilters = async () => {
       let activeCfg = configs[this.$['APP/collectionIndex']] || CFG;
       let cloudImagesData = await getCloudImagesData(this.$['APP/collectionIndex']);
-      let rData = getFilesAndFolders(cloudImagesData, activeCfg.imgSrcFolder, this.$.filterSubstr, this.$.tagFilterSubstr); 
+      let syncDataImgSrcFolder = activeCfg.syncDataImgSrcFolder || activeCfg.imgSrcFolder;
+      let rData = getFilesAndFolders(cloudImagesData, syncDataImgSrcFolder, this.$.filterSubstr, this.$.tagFilterSubstr);
       this.$.filesRenderData = rData.files;
       this.$.foldersRenderData = rData.folders;
       this.$.hasItems = Object.keys(rData.files).length > 0 || Object.keys(rData.folders).length > 0;
@@ -459,4 +460,3 @@ CitUi.rootStyles = CIT_UI_CSS;
 CitUi.template = CIT_UI_TPL;
 
 CitUi.reg('cit-ui');
-

@@ -77,4 +77,33 @@ describe('getFilesAndFolders', () => {
     assert.equal(Object.keys(result.files).length, 1);
     assert.equal(Object.keys(result.folders).length, 1);
   });
+
+  it('groups project-relative sync-data keys by the source image folder', () => {
+    let data = {
+      './cit/cit-store/autobox/001.webp': mockDescriptor('001.webp'),
+      './cit/cit-store/autobox/002.webp': mockDescriptor('002.webp'),
+      './cit/cit-store/logo.webp': mockDescriptor('logo.webp'),
+    };
+
+    let result = getFilesAndFolders(data, './cit/cit-store/');
+
+    assert.equal(result.folders.autobox.size, 2);
+    assert.deepEqual(result.folders.autobox.content, [
+      './cit/cit-store/autobox/001.webp',
+      './cit/cit-store/autobox/002.webp',
+    ]);
+    assert.ok(result.files['./cit/cit-store/logo.webp']);
+    assert.equal(result.folders['.'], undefined);
+  });
+
+  it('does not create a dot folder when the configured prefix is missing', () => {
+    let data = {
+      './cit/cit-store/autobox/001.webp': mockDescriptor('001.webp'),
+    };
+
+    let result = getFilesAndFolders(data, './other-store/');
+
+    assert.equal(result.folders.cit.size, 1);
+    assert.equal(result.folders['.'], undefined);
+  });
 });

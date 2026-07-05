@@ -91,6 +91,19 @@ function normalizePathFields(cfg, baseDir, cwd) {
 }
 
 /**
+ * @param {CITConfigEntry} entry
+ * @param {CITConfig} cfg
+ * @param {string} configDir
+ * @param {number} depth
+ * @returns {string}
+ */
+function getSyncDataImgSrcFolder(entry, cfg, configDir, depth) {
+  return depth > 0 && !isConfigInclude(entry) && typeof entry.imgSrcFolder === 'string'
+    ? toRuntimePath(entry.imgSrcFolder, 'imgSrcFolder', configDir, configDir)
+    : cfg.imgSrcFolder;
+}
+
+/**
  * @param {CITRawConfig} rawConfig
  * @returns {CITConfigEntry[]}
  */
@@ -193,6 +206,7 @@ export function resolveConfigs(rawConfig, options) {
           sourceFile: meta?.sourceFile || includeConfigPath,
           sourceIndex: meta?.sourceIndex ?? 0,
           sourceIsArray: meta?.sourceIsArray ?? Array.isArray(includeRaw),
+          syncDataImgSrcFolder: meta?.syncDataImgSrcFolder || cfg.imgSrcFolder,
           included: true,
         }));
       }
@@ -208,6 +222,7 @@ export function resolveConfigs(rawConfig, options) {
       sourceFile: configPath,
       sourceIndex: i,
       sourceIsArray: Array.isArray(rawConfig),
+      syncDataImgSrcFolder: getSyncDataImgSrcFolder(entry, cfg, configDir, depth),
       included: depth > 0,
     }));
   }

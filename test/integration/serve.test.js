@@ -148,6 +148,7 @@ describe('serve', () => {
     assert.ok(!body.includes('test-api-key'), 'API key must not be exposed to browser');
     assert.ok(!body.includes('sourceFile'), 'Source config paths must not be exposed to browser');
     assert.ok(body.includes('readOnly'), 'Browser config should include read-only metadata');
+    assert.ok(body.includes('syncDataImgSrcFolder'), 'Browser config should include sync-data display metadata');
   });
 
   it('GET /collections.json exposes safe project metadata', async () => {
@@ -160,6 +161,7 @@ describe('serve', () => {
       index: 0,
       name: 'Direct Test Collection',
       imgSrcFolder: runtimePath(path.join(TMP_DIR, 'store/')),
+      syncDataImgSrcFolder: runtimePath(path.join(TMP_DIR, 'store/')),
       projectKey: 'direct-project',
       projectName: 'Direct Project',
       projectGroup: 'Local Projects',
@@ -172,6 +174,7 @@ describe('serve', () => {
     assert.equal(data[1].projectName, 'Included Project');
     assert.equal(data[1].projectGroup, 'GitHub Pages');
     assert.deepEqual(data[1].projectTags, ['included', 'pages']);
+    assert.equal(data[1].syncDataImgSrcFolder, './store/');
     assert.equal(data[1].included, true);
     assert.equal(data[1].readOnly, true);
     assert.equal('apiKey' in data[1], false);
@@ -252,6 +255,52 @@ describe('serve', () => {
     assert.match(response.data, /read-only/);
     let rawConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     assert.equal(rawConfig[1].configPath.endsWith('included/cit-config.json'), true);
+
+    ws.close();
+  });
+
+  it('mutating data commands reject included read-only project configs', async () => {
+    let { default: WebSocket } = await import('ws');
+    let ws = new WebSocket(`ws://localhost:${WS_PORT}`);
+
+    await new Promise((resolve, reject) => {
+      ws.on('open', resolve);
+      ws.on('error', reject);
+      setTimeout(() => reject(new Error('WS connect timeout')), 3000);
+    });
+
+    async function sendAndReadText(cmd, data) {
+      ws.send(JSON.stringify({ cmd, data }));
+      return await new Promise((resolve, reject) => {
+        let timeout = setTimeout(() => {
+          ws.off('message', onMessage);
+          reject(new Error(`${cmd} response timeout`));
+        }, 3000);
+        let onMessage = (raw) => {
+          let parsed = JSON.parse(raw.toString());
+          if (parsed.cmd === 'TEXT') {
+            clearTimeout(timeout);
+            ws.off('message', onMessage);
+            resolve(parsed.data);
+          }
+        };
+        ws.on('message', onMessage);
+      });
+    }
+
+    let commands = [
+      ['EDIT', { collectionIndex: 1, update: {} }],
+      ['FETCH', { collectionIndex: 1, selection: [] }],
+      ['REMOVE', { collectionIndex: 1, selection: [] }],
+      ['SAVE_IMS', { collectionIndex: 1, hash: 'test', srcData: {} }],
+      ['DELETE_IMS', { collectionIndex: 1, hash: 'test' }],
+      ['PUB_DATA_IMG', { collectionIndex: 1, localPath: './store/test.png', imgData: 'data:image/png;base64,' }],
+    ];
+
+    for (let [cmd, data] of commands) {
+      let message = await sendAndReadText(cmd, data);
+      assert.match(message, /read-only/, `${cmd} should be rejected`);
+    }
 
     ws.close();
   });

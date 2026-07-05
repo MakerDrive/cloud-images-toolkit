@@ -23,6 +23,7 @@ function collectionItem(cfg, i) {
   let editorCfg = { ...cfg };
   delete editorCfg.included;
   delete editorCfg.readOnly;
+  delete editorCfg.syncDataImgSrcFolder;
   let searchText = [
     cfg.name,
     cfg.projectKey,

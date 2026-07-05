@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 - `CIT_CONFIG_PATH` can point CIT at an alternate config file for scripted runs.
 - Collection configs can declare project metadata with `projectKey`, `projectName`, `projectGroup`, and `projectTags`; the dashboard can filter and group projects by that metadata.
 
+### Fixed
+- Included project configs keep their source sync-data image folder namespace in the global dashboard, so existing project image folders do not collapse into a `.` folder.
+
 ## [1.0.0]
 
 ### Added

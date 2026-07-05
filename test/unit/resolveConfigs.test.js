@@ -50,6 +50,7 @@ describe('resolveConfigs', () => {
       sourceFile: configPath,
       sourceIndex: 0,
       sourceIsArray: false,
+      syncDataImgSrcFolder: './cit/cit-store/',
       included: false,
     });
   });
@@ -77,6 +78,7 @@ describe('resolveConfigs', () => {
       sourceFile: projectConfigPath,
       sourceIndex: 0,
       sourceIsArray: false,
+      syncDataImgSrcFolder: './cit/cit-store/',
       included: true,
     });
   });
@@ -120,10 +122,63 @@ describe('resolveConfigs', () => {
     assert.deepEqual(result[1].projectTags, ['pages', 'portfolio']);
     assert.equal(result[0].syncDataPath, './project/cit/cit-sync-data.json');
     assert.equal(result[1].syncDataPath, './project/cit/two-sync-data.json');
+    assert.equal(getConfigMeta(result[0]).syncDataImgSrcFolder, './cit/cit-store/');
+    assert.equal(getConfigMeta(result[1]).syncDataImgSrcFolder, './cit/cit-store/');
     assert.equal(getConfigMeta(result[0]).sourceIndex, 0);
     assert.equal(getConfigMeta(result[1]).sourceIndex, 1);
     assert.equal(getConfigMeta(result[1]).sourceIsArray, true);
     assert.equal(getConfigMeta(result[1]).included, true);
+  });
+
+  it('preserves included sync-data image namespace across nested includes', () => {
+    let cwd = path.resolve('/workspace');
+    let rootConfigPath = path.join(cwd, 'cit-config.json');
+    let nestedConfigPath = path.join(cwd, 'nested/cit-config.json');
+    let projectConfigPath = path.join(cwd, 'project/cit-config.json');
+    let files = {
+      [nestedConfigPath]: JSON.stringify(['../project/cit-config.json']),
+      [projectConfigPath]: JSON.stringify(collection()),
+    };
+
+    let result = resolveConfigs(['./nested/cit-config.json'], {
+      cwd,
+      configPath: rootConfigPath,
+      readFile: readFileFromMap(files),
+    });
+
+    assert.equal(result.length, 1);
+    assert.equal(result[0].imgSrcFolder, './project/cit/cit-store/');
+    assert.equal(getConfigMeta(result[0]).sourceFile, projectConfigPath);
+    assert.equal(getConfigMeta(result[0]).syncDataImgSrcFolder, './cit/cit-store/');
+    assert.equal(getConfigMeta(result[0]).included, true);
+  });
+
+  it('keeps included sync-data namespace independent from imgSrcFolder overrides', () => {
+    let cwd = path.resolve('/workspace');
+    let rootConfigPath = path.join(cwd, 'cit-config.json');
+    let projectConfigPath = path.join(cwd, 'project/cit-config.json');
+    let files = {
+      [projectConfigPath]: JSON.stringify(collection({
+        imgSrcFolder: path.join(cwd, 'project/cit/cit-store/'),
+      })),
+    };
+
+    let result = resolveConfigs([
+      {
+        configPath: './project/cit-config.json',
+        overrides: {
+          imgSrcFolder: './global-store/',
+        },
+      },
+    ], {
+      cwd,
+      configPath: rootConfigPath,
+      readFile: readFileFromMap(files),
+    });
+
+    assert.equal(result.length, 1);
+    assert.equal(result[0].imgSrcFolder, './global-store/');
+    assert.equal(getConfigMeta(result[0]).syncDataImgSrcFolder, './cit/cit-store/');
   });
 
   it('can mix inline collections and includes', () => {
@@ -148,6 +203,7 @@ describe('resolveConfigs', () => {
     assert.equal(result[1].name, 'Included');
     assert.equal(getConfigMeta(result[0]).included, false);
     assert.equal(getConfigMeta(result[1]).included, true);
+    assert.equal(getConfigMeta(result[1]).syncDataImgSrcFolder, './cit/cit-store/');
   });
 
   it('rejects circular includes', () => {
