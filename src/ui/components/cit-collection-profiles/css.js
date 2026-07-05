@@ -97,21 +97,14 @@ cit-collection-profiles {
       display: none;
     }
 
-    &[read-only] {
-      border-left: 3px solid rgba(255, 221, 0, .7);
-    }
-
     [group-header] {
-      margin: calc(var(--gap-mid) * -1) calc(var(--gap-mid) * -1) var(--gap-mid);
-      padding: 6px 10px;
-      background-color: rgba(255, 255, 255, .08);
+      margin-bottom: 8px;
+      padding-left: 2px;
       color: rgba(255, 255, 255, .7);
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0;
-      border-top-left-radius: 6px;
-      border-top-right-radius: 6px;
 
       &[hidden] {
         display: none;
@@ -121,26 +114,26 @@ cit-collection-profiles {
     [project-meta] {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
-      margin-top: var(--gap-mid);
+      gap: 6px;
+      margin-top: 8px;
       font-size: 12px;
+      color: rgba(255, 255, 255, .55);
 
       span {
-        display: inline-flex;
-        align-items: center;
-        min-height: 22px;
-        padding: 2px 8px;
-        border-radius: 4px;
-        background-color: rgba(255, 255, 255, .08);
-        color: rgba(255, 255, 255, .72);
+        display: inline;
 
         &[hidden] {
           display: none;
         }
 
+        &:not(:first-child):before {
+          content: '·';
+          margin-right: 6px;
+          color: rgba(255, 255, 255, .35);
+        }
+
         &[read-only] {
-          background-color: rgba(255, 221, 0, .16);
-          color: rgba(255, 221, 0, .95);
+          color: rgba(255, 255, 255, .45);
         }
       }
     }
