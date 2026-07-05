@@ -99,4 +99,49 @@ describe('CFG', () => {
     assert.equal(parsed.hasKey, true);
     assert.equal(parsed.hasKeyPath, true);
   });
+
+  it('loads included project configs successfully', async () => {
+    process.chdir(TMP_DIR);
+    let projectDir = path.join(TMP_DIR, 'project');
+    fs.mkdirSync(projectDir, { recursive: true });
+    let config = {
+      syncDataPath: './cit/cit-sync-data.json',
+      imsDataFolder: './cit/ims-widgets-data/',
+      imgSrcFolder: './cit/cit-store/',
+      apiKeyPath: './cit/CIT_API_KEY',
+      projectId: 'test-project',
+      imgUrlTemplate: 'https://example.com/{UID}/{VARIANT}',
+      previewUrlTemplate: 'https://example.com/{UID}/{VARIANT}',
+      uploadUrlTemplate: 'https://api.example.com/{PROJECT}/upload',
+      fetchUrlTemplate: 'https://api.example.com/{PROJECT}/{UID}/blob',
+      removeUrlTemplate: 'https://api.example.com/{PROJECT}/{UID}',
+      variants: ['320', '640', 'max'],
+      imgTypes: ['png', 'jpg'],
+      wsPort: 19082,
+      httpPort: 19083,
+    };
+    fs.writeFileSync(path.join(TMP_DIR, 'cit-config.json'), JSON.stringify([
+      {
+        configPath: './project/cit-config.json',
+        overrides: {
+          apiKeyPath: './CIT_API_KEY',
+        },
+      },
+    ]));
+    fs.writeFileSync(path.join(projectDir, 'cit-config.json'), JSON.stringify(config));
+    fs.writeFileSync(path.join(TMP_DIR, 'CIT_API_KEY'), 'test-api-key-123');
+
+    let { execSync } = await import('child_process');
+    let result = execSync(
+      `node -e "let m = await import('${path.resolve(__dirname, '../../src/node/CFG.js').replace(/\\/g, '/')}'); console.log(JSON.stringify({count: m.configs.length, syncDataPath: m.CFG.syncDataPath, imgSrcFolder: m.CFG.imgSrcFolder, apiKeyPath: m.CFG.apiKeyPath, hasKey: !!m.CFG.apiKey, http: m.ports.http}))"`,
+      { cwd: TMP_DIR, encoding: 'utf8', timeout: 5000, stdio: 'pipe', input: 'n\n' }
+    );
+    let parsed = JSON.parse(result.trim());
+    assert.equal(parsed.count, 1);
+    assert.equal(parsed.syncDataPath, './project/cit/cit-sync-data.json');
+    assert.equal(parsed.imgSrcFolder, './project/cit/cit-store/');
+    assert.equal(parsed.apiKeyPath, './CIT_API_KEY');
+    assert.equal(parsed.hasKey, true);
+    assert.equal(parsed.http, 19083);
+  });
 });

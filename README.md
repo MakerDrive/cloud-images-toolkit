@@ -57,6 +57,12 @@ npx cloud-images-toolkit
 
 If no config file is found, CIT will offer to create one from the reference template.
 
+By default CIT reads `cit-config.json` from the current working directory. For scripted runs, set `CIT_CONFIG_PATH` to an alternate config file:
+
+```bash
+CIT_CONFIG_PATH=./path/to/cit-config.json cit
+```
+
 ## Installation
 
 ### Global installation
@@ -119,6 +125,39 @@ CIT supports managing multiple collections simultaneously. Instead of a single o
 When the `cdn` field is set, CIT uses a built-in connector that auto-fills upload, fetch, and remove URL templates with provider-specific defaults. You can still override any template manually.
 
 To use custom URLs for your images, you need to enable this feature and configure it in your service provider dashboard.
+
+### Multi-Project Dashboard
+
+CIT can also load collections from other project config files. This lets each project keep its own `cit-config.json` while a workspace-level dashboard shows all collections together.
+
+String entries are treated as config includes:
+
+```json
+[
+  "./project-a/cit-config.json",
+  "./project-b/cit-config.json"
+]
+```
+
+Object entries with `configPath` can include a project config and apply runtime-only overrides:
+
+```json
+[
+  {
+    "configPath": "./project-a/cit-config.json",
+    "overrides": {
+      "apiKeyPath": "./cit/CIT_API_KEY",
+      "imgSrcFolder": "./cit/project-a-store/"
+    }
+  }
+]
+```
+
+Paths inside an included config are resolved relative to that config file, then exposed to the running dashboard as paths relative to the directory where `cit` was started. Override paths are resolved relative to the config file that declares the override. Included configs can contain a single collection, an array of collections, or more includes. Circular includes are rejected.
+
+Included collection profiles are read-only from the global dashboard. Edit the source project's `cit-config.json` directly when changing collection settings.
+
+A reference for a workspace-level config can be found in [`cit-config_GLOBAL_REFERENCE.json`](./cit-config_GLOBAL_REFERENCE.json).
 
 > **Important**: Add your image folder and API key file to `.gitignore`:
 > ```

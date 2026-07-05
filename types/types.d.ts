@@ -30,11 +30,11 @@ declare type CITConfig = {
   name?: string,
   cdn?: CdnType,
   syncDataPath: string,
-  imsDataPath: string,
+  imsDataPath?: string,
   imsDataFolder?: string,
   imsDataMinify?: boolean,
   imgSrcFolder: string,
-  apiKey: string,
+  apiKey?: string,
   apiKeyPath?: string,
   projectId?: string,
   imgUrlTemplate?: string,
@@ -49,7 +49,31 @@ declare type CITConfig = {
   httpPort?: number,
 };
 
-declare type CITRawConfig = CITConfig | CITConfig[];
+declare type CITConfigInclude = string | {
+  configPath: string,
+  overrides?: Partial<CITConfig>,
+};
+
+declare type CITConfigEntry = CITConfig | CITConfigInclude;
+
+declare type CITRawConfig = CITConfig | CITConfigEntry[] | CITConfigInclude;
+
+declare type CITConfigMeta = {
+  sourceFile: string,
+  sourceIndex: number,
+  sourceIsArray: boolean,
+  included: boolean,
+};
+
+declare type ResolveConfigOptions = {
+  cwd?: string,
+  configPath?: string,
+  readFile: (path: string, encoding: BufferEncoding) => string,
+  visited?: Set<string>,
+  chain?: string[],
+  depth?: number,
+  maxDepth?: number,
+};
 
 declare type WsCmdType = 'HELLO' | 'FETCH' | 'REMOVE' | 'UPDATE' | 'EDIT' | 'TEXT' | 'SAVE_IMS' | 'PUB_DATA_IMG' | 'DELETE_IMS' | 'UPDATE_IMS' | 'SAVE_CONFIG' | 'RELOAD';
 
@@ -66,4 +90,3 @@ declare type WsMsgData = {
   collectionIndex?: number,
   config?: CITConfig,
 }
-

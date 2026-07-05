@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Multi-project dashboard configs can include other `cit-config.json` files with string paths or `{ "configPath": "..." }` entries.
+- Include entries support runtime `overrides` for local paths such as `apiKeyPath` and `imgSrcFolder`.
+- Added `cit-config_GLOBAL_REFERENCE.json` for workspace-level dashboard setups.
+- `CIT_CONFIG_PATH` can point CIT at an alternate config file for scripted runs.
+
 ## [1.0.0]
 
 ### Added

@@ -14,6 +14,7 @@ const HTTP_PORT = 19181;
 describe('serve', () => {
   /** @type {import('child_process').ChildProcess} */
   let serverProcess;
+  let configPath;
 
   before(() => {
     if (fs.existsSync(TMP_DIR)) {
@@ -38,30 +39,17 @@ describe('serve', () => {
       httpPort: HTTP_PORT,
     };
     // Write config to project root so the server finds node_modules
-    let configPath = path.join(PROJECT_ROOT, 'cit-config-test.json');
+    configPath = path.join(PROJECT_ROOT, 'cit-config-test.json');
     fs.writeFileSync(configPath, JSON.stringify(config));
     fs.writeFileSync(path.join(TMP_DIR, 'API_KEY'), 'test-api-key');
 
     return new Promise((resolve, reject) => {
-      // Run server from project root but override config path via a wrapper script
-      serverProcess = spawn('node', [
-        '-e',
-        `
-          import fs from 'fs';
-          // Monkey-patch: override config file path for testing
-          let origReadFileSync = fs.readFileSync;
-          let patched = false;
-          fs.readFileSync = function(p, ...args) {
-            if (!patched && typeof p === 'string' && p.endsWith('cit-config.json')) {
-              patched = true;
-              return origReadFileSync('${configPath.replace(/\\/g, '/')}', ...args);
-            }
-            return origReadFileSync.call(this, p, ...args);
-          };
-          await import('./src/node/serve.js');
-        `,
-      ], {
+      serverProcess = spawn('node', ['src/node/serve.js'], {
         cwd: PROJECT_ROOT,
+        env: {
+          ...process.env,
+          CIT_CONFIG_PATH: configPath,
+        },
         stdio: ['pipe', 'pipe', 'pipe'],
       });
 
@@ -89,7 +77,6 @@ describe('serve', () => {
     if (serverProcess) {
       serverProcess.kill('SIGTERM');
     }
-    let configPath = path.join(PROJECT_ROOT, 'cit-config-test.json');
     if (fs.existsSync(configPath)) {
       fs.unlinkSync(configPath);
     }
@@ -160,6 +147,44 @@ describe('serve', () => {
 
     assert.equal(response.cmd, 'TEXT');
     assert.ok(response.data.includes('updated'));
+    ws.close();
+  });
+
+  it('SAVE_CONFIG writes the active CIT_CONFIG_PATH file', async () => {
+    let { default: WebSocket } = await import('ws');
+    let ws = new WebSocket(`ws://localhost:${WS_PORT}`);
+
+    await new Promise((resolve, reject) => {
+      ws.on('open', resolve);
+      ws.on('error', reject);
+      setTimeout(() => reject(new Error('WS connect timeout')), 3000);
+    });
+
+    let rawConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    ws.send(JSON.stringify({
+      cmd: 'SAVE_CONFIG',
+      data: {
+        collectionIndex: 0,
+        config: {
+          ...rawConfig,
+          name: 'Updated Test Collection',
+        },
+      },
+    }));
+
+    await new Promise((resolve, reject) => {
+      ws.on('message', (data) => {
+        let parsed = JSON.parse(data.toString());
+        if (parsed.cmd === 'TEXT' && parsed.data.includes('Collection profile saved')) {
+          resolve();
+        }
+      });
+      setTimeout(() => reject(new Error('SAVE_CONFIG response timeout')), 3000);
+    });
+
+    let updatedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    assert.equal(updatedConfig.name, 'Updated Test Collection');
+
     ws.close();
   });
 });

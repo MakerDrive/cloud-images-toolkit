@@ -2,12 +2,13 @@
 import { WebSocketServer } from 'ws';
 import fs from 'fs';
 import http from 'http';
-import { configs, ports } from './CFG.js';
+import { configPath, configs, ports } from './CFG.js';
 import indexHtml from '../ui/index.html.js';
 import esbuild from 'esbuild';
 import FolderSync, { checkDir } from './FolderSync.js';
 import ImsSync from './ImsSync.js';
 import { getPath } from './getPath.js';
+import { getConfigMeta } from './resolveConfigs.js';
 
 /** CFG safe for browser — strip sensitive fields, include collections metadata */
 let browserConfigs = configs.map((cfg, i) => {
@@ -96,15 +97,23 @@ wss.on('connection', (ws) => {
     },
     SAVE_CONFIG: async (/** @type {WsMsgData} */ msgData) => {
       let idx = msgData.collectionIndex ?? 0;
+      let meta = getConfigMeta(configs[idx]);
+      if (meta?.included) {
+        ws.send(JSON.stringify({
+          cmd: 'TEXT',
+          data: 'Included collection profiles are read-only from the global dashboard. Edit the source project config directly.',
+        }));
+        return;
+      }
       let newCfg = msgData.config;
-      let rawCfg = JSON.parse(fs.readFileSync('cit-config.json', 'utf8'));
+      let rawCfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (Array.isArray(rawCfg)) {
-        rawCfg[idx] = newCfg;
+        rawCfg[meta?.sourceIndex ?? idx] = newCfg;
       } else {
         // Fallback for single object configs
         rawCfg = newCfg;
       }
-      fs.writeFileSync('cit-config.json', JSON.stringify(rawCfg, null, 2));
+      fs.writeFileSync(configPath, JSON.stringify(rawCfg, null, 2));
       ws.send(JSON.stringify({
         cmd: 'TEXT',
         data: 'Collection profile saved! Restarting CIT server...',

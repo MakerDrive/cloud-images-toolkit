@@ -1,0 +1,10 @@
+[
+  "./project-a/cit-config.json",
+  {
+    "configPath": "./project-b/cit-config.json",
+    "overrides": {
+      "apiKeyPath": "./cit/CIT_API_KEY",
+      "imgSrcFolder": "./cit/project-b-store/"
+    }
+  }
+]

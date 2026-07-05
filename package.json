@@ -55,6 +55,8 @@
     "src/",
     "types/",
     "cit-config_REFERENCE.json",
+    "cit-config_GLOBAL_REFERENCE.json",
+    "cit-config_MULTI_REFERENCE.json",
     "LICENSE",
     "README.md"
   ],

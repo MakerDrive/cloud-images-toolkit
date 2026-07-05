@@ -43,16 +43,7 @@ export default defineConfig({
       fs.writeFileSync(path.resolve(tmp, 'API_KEY'), 'test-api-key');
       fs.writeFileSync(path.resolve(tmp, 'sync-data.json'), JSON.stringify({}));
 
-      // Monkey-patch config loading
-      let orig = fs.readFileSync;
-      let done = false;
-      fs.readFileSync = function(p, ...a) {
-        if (!done && typeof p === 'string' && p.endsWith('cit-config.json')) {
-          done = true;
-          return orig(path.resolve(tmp, 'cit-config.json'), ...a);
-        }
-        return orig.call(this, p, ...a);
-      };
+      process.env.CIT_CONFIG_PATH = path.resolve(tmp, 'cit-config.json');
       await import('./src/node/serve.js');
     "`,
     port: HTTP_PORT,

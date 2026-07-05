@@ -5,9 +5,10 @@ import { getPath } from './getPath.js';
 import { createInterface } from 'readline';
 import { resolveConnector } from './connectors/index.js';
 import { getFreePorts } from './getFreePorts.js';
+import { resolveConfigs } from './resolveConfigs.js';
 
-const CONFIG_FILE = 'cit-config.json';
-const configPath = path.resolve(process.cwd(), CONFIG_FILE);
+const CONFIG_FILE = process.env.CIT_CONFIG_PATH || 'cit-config.json';
+export const configPath = path.resolve(process.cwd(), CONFIG_FILE);
 
 if (!fs.existsSync(configPath)) {
   let refPath = getPath('./cit-config_REFERENCE.json');
@@ -39,11 +40,20 @@ try {
   process.exit(1);
 }
 
-/** @type {CITConfig[]} */
-let configArray = Array.isArray(rawConfig) ? rawConfig : [rawConfig];
+let configArray;
+try {
+  configArray = resolveConfigs(rawConfig, {
+    cwd: process.cwd(),
+    configPath,
+    readFile: fs.readFileSync,
+  });
+} catch (err) {
+  console.error(`🔴 Failed to resolve ${CONFIG_FILE}: ${err.message}`);
+  process.exit(1);
+}
 
 if (!configArray.length) {
-  console.error(`🔴 ${CONFIG_FILE} contains an empty array`);
+  console.error(`🔴 ${CONFIG_FILE} resolves to zero collections`);
   process.exit(1);
 }
 
