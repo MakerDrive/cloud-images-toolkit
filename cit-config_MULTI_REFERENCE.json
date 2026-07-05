@@ -8,6 +8,10 @@
     "imgSrcFolder": "./cit/main-store/",
     "apiKeyPath": "./cit/CIT_API_KEY",
     "projectId": "<YOUR_PROJECT_ID>",
+    "projectKey": "main",
+    "projectName": "Main Site",
+    "projectGroup": "GitHub Pages",
+    "projectTags": ["site"],
     "imgUrlTemplate": "https://<YOUR_DOMAIN>/images/{UID}/{VARIANT}",
     "previewUrlTemplate": "https://<YOUR_DOMAIN>/images/{UID}/{VARIANT}",
     "variants": ["120", "320", "640", "860", "1024", "1200", "2048", "max"],
@@ -22,6 +26,10 @@
     "imsDataFolder": "./cit/marketing-ims/",
     "imgSrcFolder": "./cit/marketing-store/",
     "apiKeyPath": "./cit/CLOUDINARY_KEY",
+    "projectKey": "marketing",
+    "projectName": "Marketing",
+    "projectGroup": "Campaigns",
+    "projectTags": ["campaign"],
     "variants": ["320", "640", "1200"],
     "imgTypes": ["png", "jpg", "webp"]
   }

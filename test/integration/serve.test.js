@@ -16,18 +16,32 @@ describe('serve', () => {
   let serverProcess;
   let configPath;
 
+  function runtimePath(absPath) {
+    let rel = path.relative(PROJECT_ROOT, absPath).replaceAll(path.sep, '/');
+    if (absPath.endsWith(path.sep) && !rel.endsWith('/')) {
+      rel += '/';
+    }
+    return rel.startsWith('.') ? rel : `./${rel}`;
+  }
+
   before(() => {
     if (fs.existsSync(TMP_DIR)) {
       fs.rmSync(TMP_DIR, { recursive: true });
     }
     fs.mkdirSync(path.join(TMP_DIR, 'store'), { recursive: true });
+    fs.mkdirSync(path.join(TMP_DIR, 'included/store'), { recursive: true });
 
     let config = {
+      name: 'Direct Test Collection',
       syncDataPath: path.join(TMP_DIR, 'sync-data.json'),
       imsDataFolder: path.join(TMP_DIR, 'ims-widgets'),
       imgSrcFolder: path.join(TMP_DIR, 'store/'),
       apiKeyPath: path.join(TMP_DIR, 'API_KEY'),
       projectId: 'test-project',
+      projectKey: 'direct-project',
+      projectName: 'Direct Project',
+      projectGroup: 'Local Projects',
+      projectTags: ['direct', 'test'],
       imgUrlTemplate: 'https://example.com/{UID}/{VARIANT}',
       previewUrlTemplate: 'https://example.com/{UID}/{VARIANT}',
       uploadUrlTemplate: 'https://api.example.com/{PROJECT}/upload',
@@ -38,9 +52,34 @@ describe('serve', () => {
       wsPort: WS_PORT,
       httpPort: HTTP_PORT,
     };
+    let includedConfig = {
+      ...config,
+      name: 'Included Test Collection',
+      syncDataPath: path.join(TMP_DIR, 'included/sync-data.json'),
+      imsDataFolder: path.join(TMP_DIR, 'included/ims-widgets'),
+      imgSrcFolder: path.join(TMP_DIR, 'included/store/'),
+      projectKey: 'source-included-project',
+      projectName: 'Source Included Project',
+      projectGroup: 'Source Group',
+      projectTags: ['source'],
+    };
     // Write config to project root so the server finds node_modules
     configPath = path.join(PROJECT_ROOT, 'cit-config-test.json');
-    fs.writeFileSync(configPath, JSON.stringify(config));
+    let includedConfigPath = path.join(TMP_DIR, 'included/cit-config.json');
+    fs.writeFileSync(includedConfigPath, JSON.stringify(includedConfig));
+    fs.writeFileSync(configPath, JSON.stringify([
+      config,
+      {
+        configPath: includedConfigPath,
+        overrides: {
+          apiKeyPath: path.join(TMP_DIR, 'API_KEY'),
+          projectKey: 'included-project',
+          projectName: 'Included Project',
+          projectGroup: 'GitHub Pages',
+          projectTags: ['included', 'pages'],
+        },
+      },
+    ]));
     fs.writeFileSync(path.join(TMP_DIR, 'API_KEY'), 'test-api-key');
 
     return new Promise((resolve, reject) => {
@@ -107,6 +146,36 @@ describe('serve', () => {
     let res = await fetch(`http://localhost:${HTTP_PORT}/CFG.js`);
     let body = await res.text();
     assert.ok(!body.includes('test-api-key'), 'API key must not be exposed to browser');
+    assert.ok(!body.includes('sourceFile'), 'Source config paths must not be exposed to browser');
+    assert.ok(body.includes('readOnly'), 'Browser config should include read-only metadata');
+  });
+
+  it('GET /collections.json exposes safe project metadata', async () => {
+    let res = await fetch(`http://localhost:${HTTP_PORT}/collections.json`);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('content-type'), 'application/json');
+    let data = await res.json();
+    assert.equal(data.length, 2);
+    assert.deepEqual(data[0], {
+      index: 0,
+      name: 'Direct Test Collection',
+      imgSrcFolder: runtimePath(path.join(TMP_DIR, 'store/')),
+      projectKey: 'direct-project',
+      projectName: 'Direct Project',
+      projectGroup: 'Local Projects',
+      projectTags: ['direct', 'test'],
+      included: false,
+      readOnly: false,
+    });
+    assert.equal(data[1].name, 'Included Test Collection');
+    assert.equal(data[1].projectKey, 'included-project');
+    assert.equal(data[1].projectName, 'Included Project');
+    assert.equal(data[1].projectGroup, 'GitHub Pages');
+    assert.deepEqual(data[1].projectTags, ['included', 'pages']);
+    assert.equal(data[1].included, true);
+    assert.equal(data[1].readOnly, true);
+    assert.equal('apiKey' in data[1], false);
+    assert.equal('sourceFile' in data[1], false);
   });
 
   it('GET /*.json returns sync data', async () => {
@@ -150,6 +219,43 @@ describe('serve', () => {
     ws.close();
   });
 
+  it('SAVE_CONFIG rejects included read-only collection profiles', async () => {
+    let { default: WebSocket } = await import('ws');
+    let ws = new WebSocket(`ws://localhost:${WS_PORT}`);
+
+    await new Promise((resolve, reject) => {
+      ws.on('open', resolve);
+      ws.on('error', reject);
+      setTimeout(() => reject(new Error('WS connect timeout')), 3000);
+    });
+
+    ws.send(JSON.stringify({
+      cmd: 'SAVE_CONFIG',
+      data: {
+        collectionIndex: 1,
+        config: {
+          name: 'Should Not Save',
+        },
+      },
+    }));
+
+    let response = await new Promise((resolve, reject) => {
+      ws.on('message', (data) => {
+        let parsed = JSON.parse(data.toString());
+        if (parsed.cmd === 'TEXT') {
+          resolve(parsed);
+        }
+      });
+      setTimeout(() => reject(new Error('SAVE_CONFIG response timeout')), 3000);
+    });
+
+    assert.match(response.data, /read-only/);
+    let rawConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    assert.equal(rawConfig[1].configPath.endsWith('included/cit-config.json'), true);
+
+    ws.close();
+  });
+
   it('SAVE_CONFIG writes the active CIT_CONFIG_PATH file', async () => {
     let { default: WebSocket } = await import('ws');
     let ws = new WebSocket(`ws://localhost:${WS_PORT}`);
@@ -161,12 +267,13 @@ describe('serve', () => {
     });
 
     let rawConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    let directConfig = Array.isArray(rawConfig) ? rawConfig[0] : rawConfig;
     ws.send(JSON.stringify({
       cmd: 'SAVE_CONFIG',
       data: {
         collectionIndex: 0,
         config: {
-          ...rawConfig,
+          ...directConfig,
           name: 'Updated Test Collection',
         },
       },
@@ -183,7 +290,7 @@ describe('serve', () => {
     });
 
     let updatedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    assert.equal(updatedConfig.name, 'Updated Test Collection');
+    assert.equal(updatedConfig[0].name, 'Updated Test Collection');
 
     ws.close();
   });

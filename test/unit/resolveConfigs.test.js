@@ -87,7 +87,7 @@ describe('resolveConfigs', () => {
     let projectConfigPath = path.join(cwd, 'project/cit-config.json');
     let files = {
       [projectConfigPath]: JSON.stringify([
-        collection({ name: 'One' }),
+        collection({ name: 'One', projectTags: ['source'] }),
         collection({ name: 'Two', syncDataPath: './cit/two-sync-data.json' }),
       ]),
     };
@@ -98,6 +98,10 @@ describe('resolveConfigs', () => {
         overrides: {
           apiKeyPath: './cit/CIT_API_KEY',
           imgSrcFolder: './shared-cit/project-store/',
+          projectKey: 'project-override',
+          projectName: 'Project Override',
+          projectGroup: 'GitHub Pages',
+          projectTags: ['pages', 'portfolio'],
         },
       },
     ], {
@@ -109,6 +113,11 @@ describe('resolveConfigs', () => {
     assert.equal(result.length, 2);
     assert.equal(result[0].apiKeyPath, './cit/CIT_API_KEY');
     assert.equal(result[0].imgSrcFolder, './shared-cit/project-store/');
+    assert.equal(result[0].projectKey, 'project-override');
+    assert.equal(result[0].projectName, 'Project Override');
+    assert.equal(result[0].projectGroup, 'GitHub Pages');
+    assert.deepEqual(result[0].projectTags, ['pages', 'portfolio']);
+    assert.deepEqual(result[1].projectTags, ['pages', 'portfolio']);
     assert.equal(result[0].syncDataPath, './project/cit/cit-sync-data.json');
     assert.equal(result[1].syncDataPath, './project/cit/two-sync-data.json');
     assert.equal(getConfigMeta(result[0]).sourceIndex, 0);

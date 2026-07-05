@@ -10,9 +10,55 @@ import ImsSync from './ImsSync.js';
 import { getPath } from './getPath.js';
 import { getConfigMeta } from './resolveConfigs.js';
 
+/**
+ * @param {unknown} tags
+ * @returns {string[]}
+ */
+function normalizeProjectTags(tags) {
+  return Array.isArray(tags) ? tags.filter(Boolean).map(String) : [];
+}
+
+/**
+ * @param {CITConfig} cfg
+ * @param {number} index
+ * @returns {CITCollectionInfo}
+ */
+function getCollectionInfo(cfg, index) {
+  let meta = getConfigMeta(cfg);
+  let included = !!meta?.included;
+  return {
+    index,
+    name: cfg.name,
+    imgSrcFolder: cfg.imgSrcFolder,
+    projectKey: cfg.projectKey,
+    projectName: cfg.projectName,
+    projectGroup: cfg.projectGroup,
+    projectTags: normalizeProjectTags(cfg.projectTags),
+    included,
+    readOnly: included,
+  };
+}
+
+/**
+ * @param {CITConfig & { index?: number, included?: boolean, readOnly?: boolean }} cfg
+ * @returns {CITConfig}
+ */
+function toSavedConfig(cfg) {
+  let next = { ...cfg };
+  delete next.index;
+  delete next.included;
+  delete next.readOnly;
+  return next;
+}
+
 /** CFG safe for browser — strip sensitive fields, include collections metadata */
 let browserConfigs = configs.map((cfg, i) => {
-  let safe = { ...cfg };
+  let collectionInfo = getCollectionInfo(cfg, i);
+  let safe = {
+    ...cfg,
+    included: collectionInfo.included,
+    readOnly: collectionInfo.readOnly,
+  };
   delete safe.apiKey;
   return safe;
 });
@@ -105,7 +151,14 @@ wss.on('connection', (ws) => {
         }));
         return;
       }
-      let newCfg = msgData.config;
+      if (!msgData.config) {
+        ws.send(JSON.stringify({
+          cmd: 'TEXT',
+          data: 'No collection profile was provided.',
+        }));
+        return;
+      }
+      let newCfg = toSavedConfig(msgData.config);
       let rawCfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (Array.isArray(rawCfg)) {
         rawCfg[meta?.sourceIndex ?? idx] = newCfg;
@@ -159,11 +212,7 @@ const httpServer = http.createServer((req, res) => {
 
   // Collections metadata
   if (req.method === 'GET' && req.url === '/collections.json') {
-    let list = configs.map((cfg, i) => ({
-      index: i,
-      name: cfg.name,
-      imgSrcFolder: cfg.imgSrcFolder,
-    }));
+    let list = configs.map(getCollectionInfo);
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(list));
     return;

@@ -8,14 +8,26 @@ export const template = html`
     <button round ${{onclick: 'close'}}>${icon('close')}</button>
   </div>
   <div p-content>
+    <div project-filter ${{'@hidden': '!hasProjectControls'}}>
+      <input type="search" placeholder="Filter projects, groups, tags..." ${{oninput: 'onProjectFilter'}}>
+      <span>{{visibleCount}}/{{totalCount}}</span>
+    </div>
+    <div empty-state ${{'@hidden': 'hasVisibleConfigs'}}>No matching projects</div>
     <div itemize="configs" item-tag="cit-collection-item">
       <template>
+        <div group-header ${{'@hidden': '!groupStart'}}>{{projectGroup}}</div>
         <div controls>
           <button ${{onclick: '^toggleUnfold'}} title="Edit">{{name}} ${icon('keyboard_arrow_down', true)}</button>
           <div>
-            <button ${{onclick: '^applyChanges', '@disabled': '!modified'}} title="Save Changes">${icon('save')} Save Changes</button>
+            <button ${{onclick: '^applyChanges', '@disabled': 'saveDisabled'}} title="Save Changes">${icon('save')} Save Changes</button>
             <button accent ${{onclick: '^onActivate'}} title="Activate Profile">${icon('check')} Set Profile</button>
           </div>
+        </div>
+        <div project-meta>
+          <span>{{projectLabel}}</span>
+          <span ${{'@hidden': '!projectKey'}}>{{projectKey}}</span>
+          <span ${{'@hidden': '!tagsLabel'}}>{{tagsLabel}}</span>
+          <span read-only ${{'@hidden': '!readOnly'}}>Read-only include</span>
         </div>
         <x-cfg ${{'$.data': 'cfg', onchange: '^onCfgChange'}} editable></x-cfg>
       </template>

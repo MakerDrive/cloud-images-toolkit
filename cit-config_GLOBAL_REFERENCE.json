@@ -4,7 +4,11 @@
     "configPath": "./project-b/cit-config.json",
     "overrides": {
       "apiKeyPath": "./cit/CIT_API_KEY",
-      "imgSrcFolder": "./cit/project-b-store/"
+      "imgSrcFolder": "./cit/project-b-store/",
+      "projectKey": "project-b",
+      "projectName": "Project B",
+      "projectGroup": "GitHub Pages",
+      "projectTags": ["public"]
     }
   }
 ]

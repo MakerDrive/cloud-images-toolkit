@@ -108,6 +108,10 @@ Create a `cit-config.json` file in your project root. A reference template is in
   "imgSrcFolder": "./cit-store/",
   "apiKeyPath": "./CIT_API_KEY",
   "projectId": "<YOUR_PROJECT_ID>",
+  "projectKey": "my-project",
+  "projectName": "My Project",
+  "projectGroup": "GitHub Pages",
+  "projectTags": ["public"],
   "imgUrlTemplate": "https://<YOUR_DOMAIN>/images/{UID}/{VARIANT}",
   "previewUrlTemplate": "https://<YOUR_DOMAIN>/images/{UID}/{VARIANT}",
   "imsUrlTemplate": "https://<YOUR_DOMAIN>/ims/{HASH}.json",
@@ -147,7 +151,11 @@ Object entries with `configPath` can include a project config and apply runtime-
     "configPath": "./project-a/cit-config.json",
     "overrides": {
       "apiKeyPath": "./cit/CIT_API_KEY",
-      "imgSrcFolder": "./cit/project-a-store/"
+      "imgSrcFolder": "./cit/project-a-store/",
+      "projectKey": "project-a",
+      "projectName": "Project A",
+      "projectGroup": "GitHub Pages",
+      "projectTags": ["public"]
     }
   }
 ]
@@ -156,6 +164,15 @@ Object entries with `configPath` can include a project config and apply runtime-
 Paths inside an included config are resolved relative to that config file, then exposed to the running dashboard as paths relative to the directory where `cit` was started. Override paths are resolved relative to the config file that declares the override. Included configs can contain a single collection, an array of collections, or more includes. Circular includes are rejected.
 
 Included collection profiles are read-only from the global dashboard. Edit the source project's `cit-config.json` directly when changing collection settings.
+
+Project metadata fields are optional and are used only by the dashboard:
+
+- `projectKey` — stable logical project key for filtering.
+- `projectName` — human-readable project name.
+- `projectGroup` — group heading in the collection profile popup.
+- `projectTags` — searchable labels.
+
+These fields do not affect path resolution, upload behavior, or generated CDN URLs. The existing `projectId` field is still the CDN/provider project identifier used by the `{PROJECT}` URL template macro.
 
 A reference for a workspace-level config can be found in [`cit-config_GLOBAL_REFERENCE.json`](./cit-config_GLOBAL_REFERENCE.json).
 

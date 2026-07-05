@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Include entries support runtime `overrides` for local paths such as `apiKeyPath` and `imgSrcFolder`.
 - Added `cit-config_GLOBAL_REFERENCE.json` for workspace-level dashboard setups.
 - `CIT_CONFIG_PATH` can point CIT at an alternate config file for scripted runs.
+- Collection configs can declare project metadata with `projectKey`, `projectName`, `projectGroup`, and `projectTags`; the dashboard can filter and group collection profiles by that metadata.
 
 ## [1.0.0]
 

@@ -37,6 +37,10 @@ declare type CITConfig = {
   apiKey?: string,
   apiKeyPath?: string,
   projectId?: string,
+  projectKey?: string,
+  projectName?: string,
+  projectGroup?: string,
+  projectTags?: string[],
   imgUrlTemplate?: string,
   previewUrlTemplate?: string,
   uploadUrlTemplate?: string,
@@ -47,6 +51,18 @@ declare type CITConfig = {
   imgTypes: string[],
   wsPort?: number,
   httpPort?: number,
+};
+
+declare type CITCollectionInfo = {
+  index: number,
+  name?: string,
+  imgSrcFolder: string,
+  projectKey?: string,
+  projectName?: string,
+  projectGroup?: string,
+  projectTags: string[],
+  included: boolean,
+  readOnly: boolean,
 };
 
 declare type CITConfigInclude = string | {
